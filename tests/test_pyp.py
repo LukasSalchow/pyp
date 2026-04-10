@@ -748,3 +748,18 @@ def test_config_end_to_end(monkeypatch, capsys):
 
         stderr = capsys.readouterr().err
         assert f"warning: Config file not found at PYP_CONFIG_PATH={f.name}" in stderr
+
+
+@pytest.mark.parametrize(
+    "code",
+    ["X = ('a',\n)\nX", "X = dict(\n    a='a',\n)['a']\nX", "X = {\n    'a': 'a',\n}['a']\nX"],
+)
+def test_multiline_node_column_offsets(code):
+    """Multi-line nodes must not leave invalid column ranges after line renumbering."""
+    assert run_pyp([code]).strip() == "a"
+
+
+@patch("pyp.get_config_contents")
+def test_multiline_node_column_offsets_in_config(config_mock):
+    config_mock.return_value = "DATES = (\n    'a',\n    'b',\n)\n"
+    assert run_pyp("DATES") == "a\nb\n"
